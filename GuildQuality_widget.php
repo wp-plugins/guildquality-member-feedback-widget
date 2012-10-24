@@ -8,12 +8,12 @@ Author: GuildQuality
 Author URI: http://www.GuildQuality.com
 */
 
-global $guildquality_plugin_table;
-global $guildquality_plugin_db_version;
-global $wpdb;
+// global $guildquality_plugin_table;
+// global $guildquality_plugin_db_version;
+// global $wpdb;
 global $linksAreEnabled;
-$guildquality_plugin_table = $wpdb->prefix . 'guildquality_plugin';
-$guildquality_plugin_db_version = '1.0';
+// $guildquality_plugin_table = $wpdb->prefix . 'guildquality_plugin';
+// $guildquality_plugin_db_version = '1.0';
 
 register_activation_hook( __FILE__,  'guildquality_plugin_install' );
 
@@ -22,18 +22,18 @@ function guildquality_plugin_install() {
   // global $guildquality_plugin_table;
   // global $guildquality_plugin_db_version;
 
-  if ( $wpdb->get_var( "show tables like '$guildquality_plugin_table'" ) != $guildquality_plugin_table ) {
-    $sql = "CREATE TABLE $guildquality_plugin_table (". 
-	     "id int NOT NULL AUTO_INCREMENT, ".
-	     "user_text text NOT NULL, ".
-	     "UNIQUE KEY id (id) ".
-			 ")";
+  // if ( $wpdb->get_var( "show tables like '$guildquality_plugin_table'" ) != $guildquality_plugin_table ) {
+  //   $sql = "CREATE TABLE $guildquality_plugin_table (". 
+	 //     "id int NOT NULL AUTO_INCREMENT, ".
+	 //     "user_text text NOT NULL, ".
+	 //     "UNIQUE KEY id (id) ".
+		// 	 ")";
 
     require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-    dbDelta( $sql );
+    // dbDelta( $sql );
 
-    add_option( "guildquality_plugin_db_version", $guildquality_plugin_db_version );
-  }
+    // add_option( "guildquality_plugin_db_version", $guildquality_plugin_db_version );
+  // }
 }
 
 class GuildQualityWidget extends WP_Widget {
@@ -351,12 +351,12 @@ function GuildQualityWidgetInit() {
 }
 
 function guildquality_widget_action() {
-  global $wpdb;
-  global $guildquality_plugin_table;
-  $user_text =  $wpdb->escape( $_POST['user_text'] );
-  $query = "INSERT INTO $guildquality_plugin_table (user_text) VALUES ('$user_text')";
-  $wpdb->query( $query );
-  echo 'success';
+  // global $wpdb;
+  // global $guildquality_plugin_table;
+  // $user_text =  $wpdb->escape( $_POST['user_text'] );
+  // $query = "INSERT INTO $guildquality_plugin_table (user_text) VALUES ('$user_text')";
+  // $wpdb->query( $query );
+  // echo 'success';
 }
 
 add_action( 'wp_ajax_guildquality_widget_action', 'guildquality_widget_action' );
