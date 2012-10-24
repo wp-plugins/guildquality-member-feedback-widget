@@ -18,7 +18,7 @@ $guildquality_plugin_db_version = '1.0';
 register_activation_hook( __FILE__,  'guildquality_plugin_install' );
 
 function guildquality_plugin_install() {
-  global $wpdb;
+  // global $wpdb;
   global $guildquality_plugin_table;
   global $guildquality_plugin_db_version;
 
