@@ -29,7 +29,7 @@ function guildquality_plugin_install() {
 	 //     "UNIQUE KEY id (id) ".
 		// 	 ")";
 
-    require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+    // require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
     // dbDelta( $sql );
 
     // add_option( "guildquality_plugin_db_version", $guildquality_plugin_db_version );
