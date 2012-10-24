@@ -19,8 +19,8 @@ register_activation_hook( __FILE__,  'guildquality_plugin_install' );
 
 function guildquality_plugin_install() {
   // global $wpdb;
-  global $guildquality_plugin_table;
-  global $guildquality_plugin_db_version;
+  // global $guildquality_plugin_table;
+  // global $guildquality_plugin_db_version;
 
   if ( $wpdb->get_var( "show tables like '$guildquality_plugin_table'" ) != $guildquality_plugin_table ) {
     $sql = "CREATE TABLE $guildquality_plugin_table (". 
