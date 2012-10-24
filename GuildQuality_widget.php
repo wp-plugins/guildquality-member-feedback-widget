@@ -339,7 +339,7 @@ class GuildQualityWidget extends WP_Widget {
         </tr>
       </table>
       <h4></h4>
-      <p>Questions? <a href="http://www.guildquality.com/blog/2012/10/16/wordpress-widget/">Check out this post</a> for instructions.</p>
+      <p>Questions? <a href="http://www.guildquality.com/blog/2012/10/16/wordpress-widget/" target="_blank">Check out this post</a> for instructions.</p>
     </div>
     <?php
   }
