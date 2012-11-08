@@ -21,10 +21,16 @@ class GuildQualityWidget extends WP_Widget {
   }
 
   function widget( $args, $instance ) {
+    function fixurl( $url_in ){
+      $url = esc_attr($url_in);
+      $result = (preg_match("/^http:\/\//", $url) == 1) ? $url : "http://".$url;
+      return $result;
+    }
+
     extract( $args );
     $show_avatar = esc_attr( $instance['show_avatar'] );
     $show_map = esc_attr( $instance['show_map'] );
-    $profileurl = (esc_attr($instance['url'])!="") ? esc_attr($instance['url']) : "http://www.GuildQuality.com";
+    $profileurl = (esc_attr($instance['url'])!="") ? fixurl($instance['url']) : "http://www.GuildQuality.com";
     $quantity = esc_attr( $instance['quantity'] );
     $bgColor = esc_attr( $instance['bgColor'] );
     $txtColor = esc_attr( $instance['txtColor'] );
@@ -107,7 +113,7 @@ class GuildQualityWidget extends WP_Widget {
           switch ($svy[$s]["type"]){
             case "review":
               ?>
-              <?= ($linksAreEnabled) ? "<a href='http://www.guildquality.com/review/".$svy[$s]['id']."?WPwidget' style='color:".$linkColor."' title='".$data["Name"]." member review on GuildQuality' target='_blank'>":"";?>
+              <?= ($linksAreEnabled) ? "<a href='http://www.guildquality.com/review/".$svy[$s]['id']."?WPwidget' style='color:".$linkColor."' title='".$data["Name"]." ".$instance["customer"]." review on GuildQuality' target='_blank'>":"";?>
               <div style="float:none;padding:0;margin:0;">
                 <b style="padding:5px"><?= $svy[$s]["reviewer"] ?> in <?= ($svy[$s]["city"]!="")? $svy[$s]["city"].', '.$svy[$s]["state"]:$svy[$s]["state"]; ?></b>
               </div>
@@ -120,7 +126,7 @@ class GuildQualityWidget extends WP_Widget {
               break;
             case "comment":
               ?>
-              <?= ($linksAreEnabled) ? "<a href='http://www.guildquality.com/comment/".$svy[$s]['id']."?WPwidget' style='color:".$linkColor."' title='".$data["Name"]." member comment on GuildQuality' target='_blank'>":"";?>
+              <?= ($linksAreEnabled) ? "<a href='http://www.guildquality.com/comment/".$svy[$s]['id']."?WPwidget' style='color:".$linkColor."' title='".$data["Name"]." ".$instance["customer"]." comment on GuildQuality' target='_blank'>":"";?>
               <div style="float:none">
                 <p style="padding: 5px 0 0 0;margin:0">From a <?= $instance["customer"]; ?> in <?= ($svy[$s]["city"]!="")? $svy[$s]["city"].', '.$svy[$s]["state"]:$svy[$s]["state"]; ?></p>
                 <b style="padding: 0 0 5px 0;margin:0"><?= $svy[$s]["question"] ?></b>
