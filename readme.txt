@@ -44,6 +44,10 @@ No, A GuildQuality account is required to use this plugin. If you don't have an 
 
 == Changelog ==
 
+= 1.1 =
+* Fixed broken links
+* Included alias in alt text
+
 = 1.0 =
 * Initial version.
 
