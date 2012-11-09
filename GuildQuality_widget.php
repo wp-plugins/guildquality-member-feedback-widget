@@ -3,7 +3,7 @@
 Plugin Name: GuildQuality Member Feedback Widget
 Plugin URI: http://www.GuildQuality.com
 Description: A simple widget that displays a Guildmember's feedback. GuildQuality surveys on behalf of quality minded home builders, remodelers and contractors.
-Version: 1.0
+Version: 1.1
 Author: GuildQuality
 Author URI: http://www.GuildQuality.com
 */
