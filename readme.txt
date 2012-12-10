@@ -4,7 +4,7 @@ Company Link: http://www.guildquality.com/
 Tags: widget, feedback, homebuilder, remodeler, contractor
 Requires at least: 3.0.1
 Tested up to: 3.4
-Stable tag: 1.1
+Stable tag: 1.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,6 +43,9 @@ No, A GuildQuality account is required to use this plugin. If you don't have an 
 3. Here is another configured widget.
 
 == Changelog ==
+
+= 1.2 =
+* Corrected images for firefox
 
 = 1.1 =
 * Fixed broken links

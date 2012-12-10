@@ -3,7 +3,7 @@
 Plugin Name: GuildQuality Member Feedback Widget
 Plugin URI: http://www.GuildQuality.com
 Description: A simple widget that displays a Guildmember's feedback. GuildQuality surveys on behalf of quality minded home builders, remodelers and contractors.
-Version: 1.1
+Version: 1.2
 Author: GuildQuality
 Author URI: http://www.GuildQuality.com
 */
@@ -52,7 +52,7 @@ class GuildQualityWidget extends WP_Widget {
 
     <style>
       .star-img {
-        background-image: url("<?= plugin_dir_url(__FILE__) ?>assets/gfx-wpstar.png");
+        background-image: url("<?= plugin_dir_url(__FILE__) ?>assets/gfx-wpstar-revised.png");
         background-repeat: no-repeat;
         float:none;
         margin:2px auto;
@@ -117,7 +117,7 @@ class GuildQualityWidget extends WP_Widget {
               <div style="float:none;padding:0;margin:0;">
                 <b style="padding:5px"><?= $svy[$s]["reviewer"] ?> in <?= ($svy[$s]["city"]!="")? $svy[$s]["city"].', '.$svy[$s]["state"]:$svy[$s]["state"]; ?></b>
               </div>
-              <div class="star-img" style="background-position-y:<?= -19*($svy[$s]["rating"]-1) ?>px"></div>
+              <div class="star-img" style="background-position: 0 <?= -19*($svy[$s]["rating"]) ?>px"></div>
               <?= ($linksAreEnabled) ? "</a>":""; ?>
               <div class="GQ-comment" style="text-align:left;width:100%;padding-top:10px">
                 <?= $svy[$s]["review"] ?>
