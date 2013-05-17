@@ -3,7 +3,7 @@
 Plugin Name: GuildQuality Member Feedback Widget
 Plugin URI: http://www.GuildQuality.com
 Description: A simple widget that displays a Guildmember's feedback. GuildQuality surveys on behalf of quality minded home builders, remodelers and contractors.
-Version: 1.2
+Version: 1.3
 Author: GuildQuality
 Author URI: http://www.GuildQuality.com
 */
@@ -21,22 +21,36 @@ class GuildQualityWidget extends WP_Widget {
   }
 
   function widget( $args, $instance ) {
+    /* Handle mistakes in the URL */
     function fixurl( $url_in ){
-      $url = esc_attr($url_in);
-      $result = (preg_match("/^http:\/\//", $url) == 1) ? $url : "http://".$url;
+      $url = $url_in;
+      $noTrailing = (preg_match("/\/$/", $url) == 1) ? substr($url, 0, -1) : $url;// remove trailing slash (we will add it back later)
+      // Determine link type and rebuild
+      if(preg_match("/\/cr\//", $url)){ // old style links
+        $components = preg_split("/\/cr\//", $noTrailing);
+        $afterCR = $components[count($components)-1];
+        $result = "http://www.guildquality.com/cr/".$afterCR;
+      } else { // vanity URLs
+        $components = preg_split("/\//", $noTrailing);
+        $afterslash = $components[count($components)-1];
+        $result = "http://www.guildquality.com/".$afterslash;
+      }
+      $result = $result."/";// reinclude trailing slash
       return $result;
     }
 
     extract( $args );
-    $show_avatar = esc_attr( $instance['show_avatar'] );
-    $show_map = esc_attr( $instance['show_map'] );
-    $profileurl = (esc_attr($instance['url'])!="") ? fixurl($instance['url']) : "http://www.GuildQuality.com";
-    $quantity = esc_attr( $instance['quantity'] );
-    $bgColor = esc_attr( $instance['bgColor'] );
-    $txtColor = esc_attr( $instance['txtColor'] );
-    $linkColor = esc_attr( $instance['linkColor'] );
-    $disable_links = false;
+    $show_avatar    = esc_attr( $instance['show_avatar'] );
+    $show_map       = esc_attr( $instance['show_map'] );
+    $profileurl     = (esc_attr($instance['url'])!="") ? fixurl($instance['url']) : "http://www.guildquality.com/";
+    $response_type  = esc_attr( $instance['response_type'] );
+    $quantity       = esc_attr( $instance['quantity'] );
+    $bgColor        = esc_attr( $instance['bgColor'] );
+    $txtColor       = esc_attr( $instance['txtColor'] );
+    $linkColor      = esc_attr( $instance['linkColor'] );
+    $disable_links  = false;// WP compliance
 
+    //syntacticly speaking...
     $disabled = $disable_links;
     if($disabled == 1 || $disabled == "1"){
       $linksAreEnabled = false;
@@ -47,11 +61,11 @@ class GuildQualityWidget extends WP_Widget {
     ?>
 
     <?php
-	echo $before_widget;
+  echo $before_widget;
     ?>
 
     <style>
-      .star-img {
+      .gq-star-img {
         background-image: url("<?= plugin_dir_url(__FILE__) ?>assets/gfx-wpstar-revised.png");
         background-repeat: no-repeat;
         float:none;
@@ -65,101 +79,146 @@ class GuildQualityWidget extends WP_Widget {
     <?php 
     // widget content
 
+    /* Function to pass the url through cURL or file_get_contents as a fall back */
+    function url_get_contents ($url) {// WP transports API alternate
+      if (!function_exists('curl_init')){
+        $status = 'cURL is not installed.';
+        $output = file_get_contents($url);
+      } else {
+        $status = 'Utilizing cURL';
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $output = curl_exec($ch);
+        curl_close($ch);
+      }
+      return array($status, $output);
+    }
+
     $url = "http://www.guildquality.com/ws/wpwidget.php?mp=".$profileurl;
-    $json = file_get_contents($url);
+    switch ($instance['response_type']){
+      case 'r':
+        $only_comments = false;
+        $only_reviews = true;
+        break;
+      case 'c':
+        $only_comments = true;
+        $only_reviews = false;
+        break;
+      default:
+        $only_comments = false;
+        $only_reviews = false;
+        break;
+    }
+
+    if($only_reviews){
+      $url .= "&only_reviews=1";
+    } else if($only_comments){ // only_reviews trumps only_comments serverside
+      $url .= "&only_comments=1";
+    }
+    $url_get_contents_return = wp_remote_get($url);// using wp transports API
+    $wp_response_code = wp_remote_retrieve_response_code( $url_get_contents_return );
+    $json = wp_remote_retrieve_body($url_get_contents_return);
     $data = json_decode($json, TRUE); // second param TRUE would return array instead of object
     ?>
+    <script type="text/javascript">
+      var json_response = <?=$json?>; // this is for debugging only, PLEASE REMOVE BEFORE GOING TO PRODUCTION
+    </script>
     <div class="gq-widget-outer" style="padding:10px;text-align:center;<?= ($bgColor!='') ? 'background-color:'.$bgColor.';':''; ?><?= 'color:'.$txtColor.';'; ?>">
       <?php
       if(isset($data['Name'])){ //verify request was a success
-      // echo $bgColor; // testing
-      echo ($linksAreEnabled) ? "<a href='".$profileurl."?WPwidget' style='color:".$linkColor."' title='".$data["Name"]." member profile on GuildQuality' target='_blank' >":"";
-      if(isset($data['Name']) && $instance['show_name']=="1"){
-        echo "<b style='float:none;font-size: 16px;margin-top: 11px;padding-right: 0px;'>".$data["Name"]."</b>";
-      } else {?>
-        <div style="width:100%;text-align:center;">
-          <img src= "http://www.guildquality.com/Guildquality.gif?k=<?= $data['GQBadge'] ?>.65" style="max-width: 95%"/>
+        echo ($linksAreEnabled) ? "<a href='".$profileurl."?WPwidget' style='color:".$linkColor."' title='".$data["Name"]." member profile on GuildQuality' target='_blank' >":"";
+        if($instance['show_name']=="1"){
+          echo "<b class='gq-name-text' style='float:none;font-size: 16px;margin-top: 11px;padding-right: 0px;'>".$data["Name"]."</b>";
+        } else {?>
+        <div class="gq-avatar-wrapper" style="width:100%;text-align:center;">
+          <img class="gq-avatar" src= "http://www.guildquality.com/Guildquality.gif?k=<?= $data['GQBadge'] ?>.65" style="max-width: 95%"/>
         </div>
         <?php
-      }
-      echo ($linksAreEnabled) ? "</a>":"";
-      if(isset($data['Map']) && $instance['show_map']=="1"){
-        echo "<iframe src='".$data["Map"]."' width='272' height='280' style='padding-top:10px;float:right;'></iframe><br>";
-      }
-      ?>
-      <div class="reviews" style="float:left;<?= ($instance['show_map']=='1')?'max-width:540px;':'' ?>">
-      <?php
-
-      echo "What our ".$instance['customer']."s say<hr style='background-color:#ccc;display:block;border:0;height:1px;margin:10px 0;padding:0'>";
-
-      $svy = $data["Feedback"];
-      $all = array(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19);
-      $solutionset = array();
-      $workingset = $all;
-
-      for ($i = 0; $i < $instance['quantity']; $i++){
-        $which = rand(0,count($workingset)-1);
-        $solutionset[count($solutionset)+1] = $workingset[$which];
-        unset($workingset[$which]);
-        $workingset = array_values($workingset);
-      }
-      $solved = sort($solutionset);
-
-      // feedback display loop
-      $count = 0;
-      foreach($solutionset as $s){
-        $count++;
-        if($count <= $instance['quantity']){
-          switch ($svy[$s]["type"]){
-            case "review":
-              ?>
-              <?= ($linksAreEnabled) ? "<a href='http://www.guildquality.com/review/".$svy[$s]['id']."?WPwidget' style='color:".$linkColor."' title='".$data["Name"]." ".$instance["customer"]." review on GuildQuality' target='_blank'>":"";?>
-              <div style="float:none;padding:0;margin:0;">
-                <b style="padding:5px"><?= $svy[$s]["reviewer"] ?> in <?= ($svy[$s]["city"]!="")? $svy[$s]["city"].', '.$svy[$s]["state"]:$svy[$s]["state"]; ?></b>
-              </div>
-              <div class="star-img" style="background-position: 0 <?= -19*($svy[$s]["rating"]) ?>px"></div>
-              <?= ($linksAreEnabled) ? "</a>":""; ?>
-              <div class="GQ-comment" style="text-align:left;width:100%;padding-top:10px">
-                <?= $svy[$s]["review"] ?>
-              </div>
-              <?php
-              break;
-            case "comment":
-              ?>
-              <?= ($linksAreEnabled) ? "<a href='http://www.guildquality.com/comment/".$svy[$s]['id']."?WPwidget' style='color:".$linkColor."' title='".$data["Name"]." ".$instance["customer"]." comment on GuildQuality' target='_blank'>":"";?>
-              <div style="float:none">
-                <p style="padding: 5px 0 0 0;margin:0">From a <?= $instance["customer"]; ?> in <?= ($svy[$s]["city"]!="")? $svy[$s]["city"].', '.$svy[$s]["state"]:$svy[$s]["state"]; ?></p>
-                <b style="padding: 0 0 5px 0;margin:0"><?= $svy[$s]["question"] ?></b>
-              </div>
-              <?= ($linksAreEnabled) ? "</a>":""; ?>
-              <div class="GQ-comment" style="text-align:left;width:100%;padding-top:10px">
-                <?= $svy[$s]["comment"] ?>
-              </div>
-              <?php
-              break;
-          }
-          echo "<hr style='background-color:#ccc;display:block;border:0;height:1px;margin:10px 0;padding:0'>";
         }
-      }
+        echo ($linksAreEnabled) ? "</a>":"";
+        if(isset($data['Map']) && $instance['show_map']=="1"){
+          echo "<iframe src='".$data["Map"]."' width='272' height='280' style='padding-top:10px;float:right;'></iframe><br>";
+        }
+        ?>
+        <!-- <div class="reviews" style="float:left;<?= ($instance['show_map']=='1')?'max-width:540px;':'' ?>"> -->
+        <div class='gq-reviews' style="margin: 0 auto;max-width: 400px;">
+        <?php
 
-      ?>
-      </div><!-- end .reviews div -->
+        echo "<span class='gq-blurb'>What our ".$instance['customer']."s say</span><hr class='gq-hr' style='background-color:#ccc;display:block;border:0;height:1px;margin:10px 0;padding:0'>";
 
-      <br clear="both">
-      <?php if($linksAreEnabled){ ?>
-        <a href="<?= $profileurl ?>?WPwidget" style="color:<?=$linkColor?>" title="<?= $data["Name"] ?> member profile on GuildQuality" target="_blank"><p>View all feedback from <?= $data["Name"] ?></p></a>
-      <?php } ?>
+        $svy = $data["Feedback"];
+        $all = array(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19);
+        if(count($svy) < 20) $all = array_slice($all, 0, count($svy));
+        $solutionset = array();
+        $workingset = $all;
+
+        for ($i = 0; $i < $instance['quantity']; $i++){
+          $which = rand(0,count($workingset)-1);
+          $solutionset[count($solutionset)+1] = $workingset[$which];
+          unset($workingset[$which]);
+          $workingset = array_values($workingset);
+        }
+        $solved = sort($solutionset);
+
+        // feedback display loop
+        $count = 0;
+        foreach($solutionset as $s){
+          $count++;
+          if($count <= $instance['quantity']){
+            switch ($svy[$s]["type"]){
+              case "review":
+                ?>
+                <?= ($linksAreEnabled) ? "<a href='http://www.guildquality.com/review/".$svy[$s]['id']."?WPwidget' style='color:".$linkColor."' title='".$data["Name"]." ".$instance["customer"]." review on GuildQuality' target='_blank'>":"";?>
+                <div class="gq-review-title-wrapper" style="float:none;padding:0;margin:0;">
+                  <b class="gq-review-title" style="padding:5px"><?= $svy[$s]["reviewer"] ?> in <?= ($svy[$s]["city"]!="")? $svy[$s]["city"].', '.$svy[$s]["state"]:$svy[$s]["state"]; ?></b>
+                </div>
+                <div class="gq-star-img" style="background-position: 0 <?= -19*($svy[$s]["rating"]) ?>px"></div>
+                <?= ($linksAreEnabled) ? "</a>":""; ?>
+                <div class="gq-review-content" style="text-align:left;width:100%;padding-top:10px">
+                  <?= $svy[$s]["review"] ?>
+                </div>
+                <?php
+                break;
+              case "comment":
+                ?>
+                <?= ($linksAreEnabled) ? "<a href='http://www.guildquality.com/comment/".$svy[$s]['id']."?WPwidget' style='color:".$linkColor."' title='".$data["Name"]." ".$instance["customer"]." comment on GuildQuality' target='_blank'>":"";?>
+                <div class="gq-comment-title-wrapper" style="float:none">
+                  <p class="gq-comment-customer" style="padding: 5px 0 0 0;margin:0">From a <?= $instance["customer"]; ?> in <?= ($svy[$s]["city"]!="")? $svy[$s]["city"].', '.$svy[$s]["state"]:$svy[$s]["state"]; ?></p>
+                  <b class="gq-comment-title" style="padding: 0 0 5px 0;margin:0"><?= $svy[$s]["question"] ?></b>
+                </div>
+                <?= ($linksAreEnabled) ? "</a>":""; ?>
+                <div class="gq-comment-content" style="text-align:left;width:100%;padding-top:10px">
+                  <?= $svy[$s]["comment"] ?>
+                </div>
+                <?php
+                break;
+            }
+            if($svy[$s]['type'] == 'review' || $svy[$s]['type'] == 'comment'){
+              echo "<hr class='gq-hr' style='background-color:#ccc;display:block;border:0;height:1px;margin:10px 0;padding:0'>";
+            }
+          }
+        }
+
+        ?>
+        </div><!-- end .reviews div -->
+
+        <br clear="both">
+        <?php if($linksAreEnabled){ ?>
+          <a class='gq-profile-link' href="<?= $profileurl ?>?WPwidget" style="color:<?=$linkColor?>" title="<?= $data["Name"] ?> member profile on GuildQuality" target="_blank"><p>View all feedback from <?= $data["Name"] ?></p></a>
+        <?php } ?>
+        <?php 
+        if($instance['show_name']=="1"){ ?>
+          <div class='gq-icon-wrapper' style="width:100%;text-align:center;">
+            <?= ($linksAreEnabled) ? "<a href='".$profileurl."?WPwidget' style='color:".$linkColor."' title='".$data["Name"]." member profile on GuildQuality' target='_blank' >":""; ?>
+            <img class='gq-icon' src= "http://www.guildquality.com/Guildquality.gif?k=<?= $data['GQBadge'] ?>.65" style="max-width: 95%"/>
+            <?= ($linksAreEnabled) ? "</a>":""; ?>
+          </div>
+        <?php
+        } // end include logo check ?>
       <?php 
-      if($instance['show_name']=="1"){ ?>
-        <div style="width:100%;text-align:center;">
-          <?= ($linksAreEnabled) ? "<a href='".$profileurl."?WPwidget' style='color:".$linkColor."' title='".$data["Name"]." member profile on GuildQuality' target='_blank' >":""; ?>
-          <img src= "http://www.guildquality.com/Guildquality.gif?k=<?= $data['GQBadge'] ?>.65" style="max-width: 95%"/>
-          <?= ($linksAreEnabled) ? "</a>":""; ?>
-        </div>
-      <?php
-      } // end include logo check ?>
-      <?php } else { //end json receipt validation
-        echo "Unable to find GuildQuality account. Please verify that the profile url is valid.<br>Note: http://www.guildquality.com/... must be included.";
+      } else { //end json receipt validation
+        echo "Unable to find GuildQuality account. Please verify that the <a href='".$profileurl."' target='_blank'>profile url</a> is valid.<br><br/>Response code: ".$wp_response_code;
       } ?>
     </div><!-- /.gq-widget-outer -->
     <?php
@@ -180,6 +239,12 @@ class GuildQualityWidget extends WP_Widget {
     $url = esc_attr( $instance['url'] );
     $quantity = esc_attr( $instance['quantity'] );
     $customer = esc_attr( $instance['customer'] );
+    $response_type = esc_attr( $instance['response_type'] );
+    $type_choices = array(
+      'Reviews & Comments'  => 'rc',
+      'Reviews Only'        => 'r',
+      'Comments Only'       => 'c'
+    );
     $bgColor = esc_attr( $instance['bgColor'] );
     $txtColor = esc_attr( $instance['txtColor'] );
     $linkColor = esc_attr( $instance['linkColor'] );
@@ -261,6 +326,18 @@ class GuildQualityWidget extends WP_Widget {
           </td>
         </tr>
         <tr>
+          <td colspan="2">
+            <span>Display:&nbsp;&nbsp;</span>
+            <?php
+            echo '<select name="' . $this->get_field_name('response_type') . '" id="' . $this->get_field_id('response_type') . '">';
+            foreach($type_choices as $k => $v){
+              echo '<option value="' . $v . '" ' . ($response_type == $v ? 'selected="selected"' : "") .  '>' . $k . '</option>';
+            }
+            echo '</select>';
+            ?>
+          </td>
+        </tr>
+        <tr>
         <td height="32"><label>How many to display: </label></td>
         <td>
         <?php
@@ -338,7 +415,7 @@ function guildquality_plugin_js_header() {
      //<![CDATA[
      jQuery(document).ready(function($) {
        jQuery('#guildquality_text_submit_id').click(function(){
-       jQuery.post('<?php echo admin_url( 'admin-ajax.php' ); ?>', { 'action': 'guildquality_widget_action',  'user_text': jQuery('#guildquality_text_id').val() }	);
+       jQuery.post('<?php echo admin_url( 'admin-ajax.php' ); ?>', { 'action': 'guildquality_widget_action',  'user_text': jQuery('#guildquality_text_id').val() }  );
        });
      });
      //]]>
