@@ -76,7 +76,7 @@ class GuildQualityWidget extends WP_Widget {
       }
     </style>
 
-    <?php 
+    <?php
     // widget content
 
     /* Function to pass the url through cURL or file_get_contents as a fall back */
@@ -120,10 +120,14 @@ class GuildQualityWidget extends WP_Widget {
     $wp_response_code = wp_remote_retrieve_response_code( $url_get_contents_return );
     $json = wp_remote_retrieve_body($url_get_contents_return);
     $data = json_decode($json, TRUE); // second param TRUE would return array instead of object
-    ?>
+
+    /*
     <script type="text/javascript">
       var json_response = <?=$json?>; // this is for debugging only, PLEASE REMOVE BEFORE GOING TO PRODUCTION
     </script>
+    */
+
+    ?>
     <div class="gq-widget-outer" style="padding:10px;text-align:center;<?= ($bgColor!='') ? 'background-color:'.$bgColor.';':''; ?><?= 'color:'.$txtColor.';'; ?>">
       <?php
       if(isset($data['Name'])){ //verify request was a success
@@ -207,7 +211,7 @@ class GuildQualityWidget extends WP_Widget {
         <?php if($linksAreEnabled){ ?>
           <a class='gq-profile-link' href="<?= $profileurl ?>?WPwidget" style="color:<?=$linkColor?>" title="<?= $data["Name"] ?> member profile on GuildQuality" target="_blank"><p>View all feedback from <?= $data["Name"] ?></p></a>
         <?php } ?>
-        <?php 
+        <?php
         if($instance['show_name']=="1"){ ?>
           <div class='gq-icon-wrapper' style="width:100%;text-align:center;">
             <?= ($linksAreEnabled) ? "<a href='".$profileurl."?WPwidget' style='color:".$linkColor."' title='".$data["Name"]." member profile on GuildQuality' target='_blank' >":""; ?>
@@ -216,7 +220,7 @@ class GuildQualityWidget extends WP_Widget {
           </div>
         <?php
         } // end include logo check ?>
-      <?php 
+      <?php
       } else { //end json receipt validation
         echo "Unable to find GuildQuality account. Please verify that the <a href='".$profileurl."' target='_blank'>profile url</a> is valid.<br><br/>Response code: ".$wp_response_code;
       } ?>
@@ -310,7 +314,7 @@ class GuildQualityWidget extends WP_Widget {
           </td>
         </tr>
       </table>
-      
+
 
       <table width="100%" height="109" border="0">
         <tr>
@@ -456,7 +460,7 @@ function gq_widget_scripts(){
       padding: 0;
     }
   </style>
-  
+
   <?php
 }
 add_action('admin_footer', 'gq_widget_scripts');
