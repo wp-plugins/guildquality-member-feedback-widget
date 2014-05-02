@@ -3,7 +3,7 @@
 Plugin Name: GuildQuality Member Feedback Widget
 Plugin URI: http://www.GuildQuality.com
 Description: A simple widget that displays a Guildmember's feedback. GuildQuality surveys on behalf of quality minded home builders, remodelers and contractors.
-Version: 1.3
+Version: 1.4
 Author: GuildQuality
 Author URI: http://www.GuildQuality.com
 */
@@ -21,28 +21,12 @@ class GuildQualityWidget extends WP_Widget {
   }
 
   function widget( $args, $instance ) {
-    /* Handle mistakes in the URL */
-    function fixurl( $url_in ){
-      $url = $url_in;
-      $noTrailing = (preg_match("/\/$/", $url) == 1) ? substr($url, 0, -1) : $url;// remove trailing slash (we will add it back later)
-      // Determine link type and rebuild
-      if(preg_match("/\/cr\//", $url)){ // old style links
-        $components = preg_split("/\/cr\//", $noTrailing);
-        $afterCR = $components[count($components)-1];
-        $result = "http://www.guildquality.com/cr/".$afterCR;
-      } else { // vanity URLs
-        $components = preg_split("/\//", $noTrailing);
-        $afterslash = $components[count($components)-1];
-        $result = "http://www.guildquality.com/".$afterslash;
-      }
-      $result = $result."/";// reinclude trailing slash
-      return $result;
-    }
+
 
     extract( $args );
     $show_avatar    = esc_attr( $instance['show_avatar'] );
     $show_map       = esc_attr( $instance['show_map'] );
-    $profileurl     = (esc_attr($instance['url'])!="") ? fixurl($instance['url']) : "http://www.guildquality.com/";
+    $profileurl     = (esc_attr($instance['url'])!="") ? $this->fixurl($instance['url']) : "http://www.guildquality.com/";
     $response_type  = esc_attr( $instance['response_type'] );
     $quantity       = esc_attr( $instance['quantity'] );
     $bgColor        = esc_attr( $instance['bgColor'] );
@@ -78,23 +62,6 @@ class GuildQualityWidget extends WP_Widget {
 
     <?php
     // widget content
-
-    /* Function to pass the url through cURL or file_get_contents as a fall back */
-    function url_get_contents ($url) {// WP transports API alternate
-      if (!function_exists('curl_init')){
-        $status = 'cURL is not installed.';
-        $output = file_get_contents($url);
-      } else {
-        $status = 'Utilizing cURL';
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $output = curl_exec($ch);
-        curl_close($ch);
-      }
-      return array($status, $output);
-    }
-
     $url = "http://www.guildquality.com/ws/wpwidget.php?mp=".$profileurl;
     switch ($instance['response_type']){
       case 'r':
@@ -231,6 +198,25 @@ class GuildQualityWidget extends WP_Widget {
 
     echo $after_widget;
   }
+
+    /* Handle mistakes in the URL */
+  private function fixurl( $url_in )
+  {
+      $url = $url_in;
+      $noTrailing = (preg_match("/\/$/", $url) == 1) ? substr($url, 0, -1) : $url;// remove trailing slash (we will add it back later)
+      // Determine link type and rebuild
+      if(preg_match("/\/cr\//", $url)){ // old style links
+        $components = preg_split("/\/cr\//", $noTrailing);
+        $afterCR = $components[count($components)-1];
+        $result = "http://www.guildquality.com/cr/".$afterCR;
+      } else { // vanity URLs
+        $components = preg_split("/\//", $noTrailing);
+        $afterslash = $components[count($components)-1];
+        $result = "http://www.guildquality.com/".$afterslash;
+      }
+      $result = $result."/";// reinclude trailing slash
+      return $result;
+    }
 
   function update( $new_instance, $old_instance ) {
     return $new_instance;
